@@ -1,6 +1,6 @@
 node_modules/
 
-ecosystem.config.js
+.env
 
 npm-debug.log*
 
