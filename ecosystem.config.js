@@ -2,8 +2,9 @@ module.exports = {
     apps: [
         {
             name: 'MOAP-Backend',
-            script: 'npn',
+            script: 'npm',
             args: 'start',
+            watch: true,
         }
     ]
 }
