@@ -4,7 +4,7 @@ const router = express.Router();
 const menuCon = require('../controllers/MenuController');
 
 router.get('/', async (req, res) => {
-    const id = req.params.id;
+    const id = req.query.id;
     const menues = await menuCon.findAll(id);
     res.json(menues);
 });
