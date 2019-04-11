@@ -15,7 +15,7 @@ before run this projects, should install below applications to server.
 $ git clone https://git.mosin.jp/git/mosin/MOAP-Backend.git
 $ cd MOAP-Backend
 $ npm i
-$ mv ecosystem.config.js.sample ecosystem.config.js
+$ cp .env.sample .env
 // edit environment variables
 $ pm2 start ecosystem.config.js
 ```
