@@ -4,7 +4,8 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     price: DataTypes.FLOAT,
     stocks: DataTypes.INTEGER,
-    required_time: DataTypes.INTEGER
+    required_time: DataTypes.INTEGER,
+    image: DataTypes.STRING,
   }, {});
   Menu.associate = function(models) {
     // associations can be defined here

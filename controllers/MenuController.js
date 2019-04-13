@@ -43,7 +43,7 @@ const checkValidValues = (name, price, stocks, requiredTime) => {
     return results;
 }
 
-const createMenu = async (name, price, stocks, requiredTime) => {
+const createMenu = async (name, price, stocks, requiredTime, image) => {
     const validation = checkValidValues(name, price, stocks, requiredTime);
     
     if(validation.err) {
@@ -60,7 +60,8 @@ const createMenu = async (name, price, stocks, requiredTime) => {
         name: name,
         price: price,
         stocks: stocks,
-        required_time: requiredTime
+        required_time: requiredTime,
+        image: image
     };
 
     return await Menu.create(newMenuObj);
