@@ -4,7 +4,7 @@ module.exports = {
             name: 'MOAP-Backend',
             script: 'npm',
             args: 'start',
-            watch: true,
+            watch: ['controllers/', 'routes/'],
         }
     ]
 }
