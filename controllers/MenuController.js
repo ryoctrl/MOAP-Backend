@@ -67,19 +67,101 @@ const createMenu = async (name, price, stocks, requiredTime, image) => {
     return await Menu.create(newMenuObj);
 }
 
-const findAll = async id => {
+const findAll = async () => {
     const query = {
         where: {
         }
     }
 
-    if(id) {
-        query.where.id = id
-    }
     return await Menu.findAll(query);
 }
+
+const findOneById = async id => {
+    const query = {
+        where: {
+            id: id
+        }
+    };
+    return await Menu.findOne(query);
+}
+
+const _isNumber = num => {
+    return typeof(num) === 'number';
+}
+
+/**
+ * @param itemId {Number} - item id.
+ * @param requiredAmount {Number} - required amount number.
+ * @throws {Object} - throw error object.
+ * @return {Boolean} - isValidStock.
+ */
+const checkMenuStocks = async (itemId, requiredAmount) => {
+    if(!_isNumber(itemId) || !_isNumber(requiredAmount)) {
+        throw new TypeError('itemId or requiredAmount is not number type');
+    }
+    const item = await findOneById(itemId).catch(err => {
+        console.error(err);
+        return null;
+    });
+
+    if(!item) return false;
+
+    requiredAmount = Number(requiredAmount);
+    return item.stocks >= requiredAmount;
+};
+
+/**
+ * @param itemId {Number} - item id.
+ * @param requiredAmount {Number} - required amount number.
+ * @throws {Object} - throw error object.
+ * @return {Number} - basically return the total price, when if shortage stocks return the -1.
+ */
+
+const getPrice = async (itemId, requiredAmount) => {
+    if(!_isNumber(itemId) || !_isNumber(requiredAmount)) {
+        throw new TypeError('itemId or requiredAmount is not number type');
+    }
+
+    const isValidStock = checkMenuStocks(itemId, requiredAmount);
+
+    if(!isValidStock) return -1;
+
+    const item = await findOneById(itemId);
+
+    if(!item) return -1;
+
+    return item.price * requiredAmount;
+};
+
+const cutStocks = async (itemId, amount) => {
+    const handleError = err => {
+        console.error(err);
+        return null;
+    }
+    const isValidStocks = await checkMenuStocks(itemId, amount);
+    if(!isValidStocks) return false;
+    const item = await findOneById(itemId);
+
+    const params = {
+        stocks: item.stocks - amount
+    };
+
+    const query = {
+        where: {
+            id: itemId
+        }
+    };
+
+    const result = await Menu.update(params, query).catch(handleError);
+    if(!result) return false;
+    return true;
+};
 
 module.exports = {
     createMenu,
     findAll,
+    findOneById,
+    checkMenuStocks,
+    getPrice,
+    cutStocks
 };
