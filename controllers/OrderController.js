@@ -1,6 +1,7 @@
 const Orders = require('../models').Order;
 const OrderItems = require('../models').OrderItem;
 const menu = require('./MenuController');
+const socket = require('./SocketController');
 
 const _validateCartItems = cart => {
     for(const item of cart) {
@@ -69,7 +70,8 @@ const registerNewCart = async cart => {
     if(!validate) return false;
 
     const order = await createOrder(cart);
-    createOrderItems(cart, order);
+    const orderItems = createOrderItems(cart, order);
+    socket.emitOrder(order, orderItems);
     return order;
 };
 
