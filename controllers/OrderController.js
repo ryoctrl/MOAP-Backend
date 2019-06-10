@@ -70,7 +70,7 @@ const registerNewCart = async cart => {
     if(!validate) return false;
 
     const order = await createOrder(cart);
-    const orderItems = createOrderItems(cart, order);
+    const orderItems = await createOrderItems(cart, order);
     socket.emitOrder(order, orderItems);
     return order;
 };
