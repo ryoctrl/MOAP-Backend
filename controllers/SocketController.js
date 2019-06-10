@@ -3,12 +3,14 @@ let connection;
 const init = io => {
     console.log('Initializing WebSocket!');
     io.on('connection', socket => {
-        connection = socket;
+        connections.push(socket);
     });
 };
 
 const emitOrder = (order, orderItems) => {
-    connection.emit('orders.new', orderItems);
+    connections.map(socket => {
+        socket.emit('orders.new', orderItems);
+    });
 };
 
 
