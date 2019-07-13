@@ -7,9 +7,9 @@ const init = io => {
     });
 };
 
-const emitOrder = (order, orderItems) => {
+const emitOrder = (channel, order) => {
     connections.map(socket => {
-        socket.emit('orders.new', orderItems);
+        socket.emit(channel, order);
     });
 };
 

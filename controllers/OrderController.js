@@ -1,5 +1,7 @@
-const Orders = require('../models').Order;
-const OrderItems = require('../models').OrderItem;
+const models = require('../models');
+const Orders = models.Order;
+const OrderItems = models.OrderItem;
+const Menu = models.Menu;
 const menu = require('./MenuController');
 const socket = require('./SocketController');
 
@@ -65,25 +67,50 @@ const createOrderItems = async (cart, order) => {
     return results;
 };
 
+const findOneById = async id => {
+    const query = {
+        where: {
+            id: id
+        },
+        include: [{
+            model: OrderItems,
+            required: false,
+            include: [{
+                model: Menu,
+                required: false,
+            }]
+        }]
+    };
+    return await Orders.findOne(query);
+};
+
 const registerNewCart = async cart => {
     const validate = _validateCartItems(cart);
     if(!validate) return false;
 
     const order = await createOrder(cart);
-    const orderItems = await createOrderItems(cart, order);
-    socket.emitOrder(order, orderItems);
-    return order;
+    await createOrderItems(cart, order);
+    const createdOrder = await findOneById(order.id);
+    socket.emitOrder('orders.new', createdOrder);
+    return createdOrder;
 };
 
 const findAll = async options => {
+    let isCompleted = !!options;
+    if(options) isCompleted = !(options.is_completed === 'false');
+    console.log(isCompleted);
     const query = {
         where: {
-            is_completed: options.is_completed || true,
+            is_completed: isCompleted
         },
-        raw: true,
         include: [{
             model: OrderItems,
-            required: false
+            required: false,
+            include: [{
+                model: Menu,
+                required: false,
+            }]
+
         }]
     };
     return await Orders.findAll(query);
@@ -92,8 +119,20 @@ const findAll = async options => {
 const completeOrder = async order => {
     if(!order.id) return;
 
-    
+    const query = {
+        where: {
+            id: order.id
+        }
+    };
 
+    const params = {
+        is_completed: true,
+    };
+
+    const result = await Orders.update(params, query);
+    const updatedOrder = await Orders.findOne(query);
+    socket.emitOrder('orders.complete', updatedOrder);
+    return updatedOrder;
 };
 
 module.exports = {

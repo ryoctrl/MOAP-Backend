@@ -16,4 +16,11 @@ router.post('/create', async (req, res) => {
     res.json(body);
 });
 
+router.post('/complete', async (req, res) => {
+    const orderObj = req.body.order;
+    const updatedOrder = await order.completeOrder(orderObj);
+    res.status(200);
+    res.json(updatedOrder);
+});
+
 module.exports = router;
