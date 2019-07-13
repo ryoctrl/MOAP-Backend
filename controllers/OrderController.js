@@ -75,6 +75,29 @@ const registerNewCart = async cart => {
     return order;
 };
 
+const findAll = async options => {
+    const query = {
+        where: {
+            is_completed: options.is_completed || true,
+        },
+        raw: true,
+        include: [{
+            model: OrderItems,
+            required: false
+        }]
+    };
+    return await Orders.findAll(query);
+};
+
+const completeOrder = async order => {
+    if(!order.id) return;
+
+    
+
+};
+
 module.exports = {
     registerNewCart,
+    findAll,
+    completeOrder,
 };
