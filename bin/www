@@ -23,6 +23,12 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
+ * Create WebSocket Server
+ */
+const io = require('socket.io').listen(server);
+require('../controllers/SocketController').init(io);
+
+/**
  * Listen on provided port, on all network interfaces.
  */
 

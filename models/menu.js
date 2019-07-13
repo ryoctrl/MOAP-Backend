@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
     image: DataTypes.STRING,
   }, {});
   Menu.associate = function(models) {
-    // associations can be defined here
+      Menu.hasOne(models.OrderItem, {foreignKey: 'menu_id'})
   };
   return Menu;
 };
