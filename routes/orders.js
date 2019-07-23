@@ -11,9 +11,23 @@ router.get('/', async (req, res) => {
 router.post('/create', async (req, res) => {
     const body = req.body;
     const cart = body.cart;
-    order.registerNewCart(cart);
+    const newOrder = await order.registerNewCart(cart);
+    if(newOrder.error) {
+        res.status(500);
+    } else {
+        res.status(200);
+    }
+    res.json(newOrder);
+});
+
+router.post('/payment', async(req, res) => {
+    const body = req.body;
+    const orderObj = body.order;
+    const paidOrder = await order.paidOrder(orderObj);
     res.status(200);
-    res.json(body);
+    console.log('returning');
+    console.log(paidOrder);
+    res.json(paidOrder);
 });
 
 router.post('/complete', async (req, res) => {

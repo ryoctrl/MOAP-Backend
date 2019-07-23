@@ -5,16 +5,27 @@ const Menu = models.Menu;
 const menu = require('./MenuController');
 const socket = require('./SocketController');
 
-const _validateCartItems = cart => {
+const generateError = message => {
+    return {
+        error: true,
+        message
+    }
+}
+
+const _validateCartItems = async cart => {
+    if(!Array.isArray(cart) || cart.length === 0) {
+        return generateError('カートに商品がありません');
+    }
+
     for(const item of cart) {
         const itemId = item.id;
         const amount = item.amount;
-        if(!itemId || !amount) return false;
+        if(!itemId || !amount) return generateError('カートの商品が不正です');
 
-        const isValidStock = menu.checkMenuStocks(itemId, amount);
-        if(!isValidStock) return false;
+        const isValidStock = await menu.checkMenuStocks(itemId, amount);
+        if(!isValidStock) return generateError('在庫が足りません');
     }
-    return true;
+    return { error: false };
 };
 
 const _getCartTotalPrice = async cart => {
@@ -32,6 +43,9 @@ const _getCartTotalPrice = async cart => {
 
 const createOrder = async cart => {
     const totalPrice = await _getCartTotalPrice(cart);
+    if(totalPrice === -1) {
+        return generateError('在庫が足りません');
+    }
 
     const orderObject = {
         total_price: totalPrice
@@ -85,10 +99,15 @@ const findOneById = async id => {
 };
 
 const registerNewCart = async cart => {
-    const validate = _validateCartItems(cart);
-    if(!validate) return false;
+    const validate = await _validateCartItems(cart);
+    if(validate.error) {
+        return validate;
+    }
 
     const order = await createOrder(cart);
+    if(order.error) {
+        return order;
+    }
     await createOrderItems(cart, order);
     const createdOrder = await findOneById(order.id);
     socket.emitOrder('orders.new', createdOrder);
@@ -116,6 +135,26 @@ const findAll = async options => {
     return await Orders.findAll(query);
 };
 
+const paidOrder = async order => {
+    if(!order.id) return;
+
+    const query = {
+        where: {
+            id: order.id
+        }
+    };
+
+    const params = {
+        is_paid: true,
+    };
+
+    const result = await Orders.update(params, query);
+    const updatedOrder = await findOneById(order.id);
+    socket.emitOrder('orders.paid', updatedOrder);
+    return updatedOrder;
+};
+
+
 const completeOrder = async order => {
     if(!order.id) return;
 
@@ -130,7 +169,7 @@ const completeOrder = async order => {
     };
 
     const result = await Orders.update(params, query);
-    const updatedOrder = await Orders.findOne(query);
+    const updatedOrder = await findOneById(order.id);
     socket.emitOrder('orders.complete', updatedOrder);
     return updatedOrder;
 };
@@ -139,4 +178,5 @@ module.exports = {
     registerNewCart,
     findAll,
     completeOrder,
+    paidOrder,
 };
