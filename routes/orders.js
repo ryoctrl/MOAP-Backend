@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const order = require('../controllers/OrderController');
+const nem = require('../controllers/NemController');
 
 router.get('/', async (req, res) => {
     const query = req.query;
@@ -21,18 +22,23 @@ router.post('/create', async (req, res) => {
 });
 
 router.post('/payment', async(req, res) => {
-    const body = req.body;
-    const orderObj = body.order;
+    const { order: orderObj, hash } = req.body;
+
+    if(!hash){
+        res.status(500).json({err: true, message: 'required parameter was not passed: hash'});
+        return;
+    }
+
+    const paymentResult = await nem.checkPaymentTransaction(hash);
+    console.log(paymentResult);
+
     const paidOrder = await order.paidOrder(orderObj);
-    res.status(200);
-    console.log('returning');
-    console.log(paidOrder);
-    res.json(paidOrder);
+    res.status(200).json(paidOrder);
 });
 
 router.post('/complete', async (req, res) => {
-    const orderObj = req.body.order;
-    const updatedOrder = await order.completeOrder(orderObj);
+    const { order } = req.body;
+    const updatedOrder = await order.completeOrder(order);
     res.status(200);
     res.json(updatedOrder);
 });
