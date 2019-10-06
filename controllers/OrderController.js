@@ -114,10 +114,53 @@ const registerNewCart = async cart => {
     return createdOrder;
 };
 
+const updateOrder = async (id, cart) => {
+    if(!Array.isArray(cart) || cart.length === 0)  return await _validateCartItems(cart);
+    let order = await findOneById(id);
+    if(!order) return generateError(`Order not found: ${id}`);
+
+    const upsertCart = (await Promise.all(cart.map(async item => {
+        const { id: itemId, amount } = item;
+        const query = {
+            where: {
+                order_id: id,
+                menu_id: itemId,
+            },
+            include: [{
+                model: Menu,
+                required: false
+            }]
+        }
+        const orderItem = await  OrderItems.findOne(query);
+        if(!orderItem) return item;
+        if(orderItem.amount === amount) return null;
+
+        const amountDiff = amount - orderItem.amount;
+        if(amountDiff < 0) {
+            await menu.cutStocks(item.id, amountDiff);
+        } else {
+            const canIncreaseAmount = await menu.checkMenuStocks(itemId, amountDiff);
+            if(!canIncreaseAmount) return generateError(`在庫が足りません. ID: ${itemId}`);
+            await menu.checkMenuStocks(itemId, amountDiff);
+            await menu.cutStocks(itemId, amountDiff);
+        }
+
+        await OrderItems.update({ amount, price: amount * orderItem.Menu.price}, { where: { id: orderItem.id }});
+        return null;
+    }))).filter(item => item !== null);
+
+    const existError = upsertCart.filter(upsert => upsert.err);
+    if(existError.length > 0) return existError[0];
+    if(upsertCart.length > 0) await createOrderItems(upsertCart, order);
+
+    order = await findOneById(id);
+    await Orders.update({ total_price: order.OrderItems.reduce((sum, item) => sum + item.price, 0) }, { where: { id }});
+    return await findOneById(order.id);
+};
+
 const findAll = async options => {
     let isCompleted = !!options;
     if(options) isCompleted = !(options.is_completed === 'false');
-    console.log(isCompleted);
     const query = {
         where: {
             is_completed: isCompleted
@@ -179,4 +222,5 @@ module.exports = {
     findAll,
     completeOrder,
     paidOrder,
+    updateOrder,
 };

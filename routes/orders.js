@@ -21,6 +21,20 @@ router.post('/create', async (req, res) => {
     res.json(newOrder);
 });
 
+router.post('/update', async (req, res) => {
+    const { id, cart } = req.body;
+    if(!id) return res.status(500).json({err: true, message: 'required parameter was not passed: id'});
+    if(!cart) return res.status(500).json({err: true, message: 'required parameter was not passed: cart'});
+
+    const updatedOrder = await order.updateOrder(id, cart);
+    if(updatedOrder.error) {
+        res.status(500);
+    } else {
+        res.status(200);
+    }
+    res.json(updatedOrder);
+});
+
 router.post('/payment', async(req, res) => {
     const { order: orderObj, hash } = req.body;
 
