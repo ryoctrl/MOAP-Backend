@@ -178,7 +178,7 @@ const findAll = async options => {
     return await Orders.findAll(query);
 };
 
-const paidOrder = async order => {
+const updateOrderToPaid = async order => {
     if(!order.id) return;
 
     const query = {
@@ -193,10 +193,8 @@ const paidOrder = async order => {
 
     const result = await Orders.update(params, query);
     const updatedOrder = await findOneById(order.id);
-    socket.emitOrder('orders.paid', updatedOrder);
-    return updatedOrder;
-};
-
+    return updateOrder;
+}
 
 const completeOrder = async order => {
     if(!order.id) return;
@@ -221,6 +219,6 @@ module.exports = {
     registerNewCart,
     findAll,
     completeOrder,
-    paidOrder,
     updateOrder,
+    updateOrderToPaid,
 };
