@@ -43,11 +43,17 @@ router.post('/payment', async(req, res) => {
         return;
     }
 
-    const paymentResult = await nem.checkPaymentTransaction(hash);
-    console.log(paymentResult);
-
-    const paidOrder = await order.paidOrder(orderObj);
-    res.status(200).json(paidOrder);
+    const paymentResult = await nem.checkPaymentTransaction(hash, orderObj);
+    if(paymentResult) {
+        const paidOrder = await order.paidOrder(orderObj);
+        res.status(200).json(paidOrder);
+    } else {
+        res.status(500).json({
+            err: true,
+            message: `決済が確認できませんでした: ${hash}`,
+            orderObj,
+        });
+    }
 });
 
 router.post('/complete', async (req, res) => {
