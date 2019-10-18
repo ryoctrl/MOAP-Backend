@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const order = require('../controllers/OrderController');
+const nem = require('../controllers/NemController');
 
 router.get('/', async (req, res) => {
     const query = req.query;
@@ -11,9 +12,55 @@ router.get('/', async (req, res) => {
 router.post('/create', async (req, res) => {
     const body = req.body;
     const cart = body.cart;
-    order.registerNewCart(cart);
+    const newOrder = await order.registerNewCart(cart);
+    if(newOrder.error) {
+        res.status(500);
+    } else {
+        res.status(200);
+    }
+    res.json(newOrder);
+});
+
+router.post('/update', async (req, res) => {
+    const { id, cart } = req.body;
+    if(!id) return res.status(500).json({err: true, message: 'required parameter was not passed: id'});
+    if(!cart) return res.status(500).json({err: true, message: 'required parameter was not passed: cart'});
+
+    const updatedOrder = await order.updateOrder(id, cart);
+    if(updatedOrder.error) {
+        res.status(500);
+    } else {
+        res.status(200);
+    }
+    res.json(updatedOrder);
+});
+
+router.post('/payment', async(req, res) => {
+    const { order: orderObj, hash } = req.body;
+
+    if(!hash){
+        res.status(500).json({err: true, message: 'required parameter was not passed: hash'});
+        return;
+    }
+
+    const paymentResult = await nem.checkPaymentTransaction(hash, orderObj);
+    if(paymentResult) {
+        const paidOrder = await order.paidOrder(orderObj);
+        res.status(200).json(paidOrder);
+    } else {
+        res.status(500).json({
+            err: true,
+            message: `決済が確認できませんでした: ${hash}`,
+            orderObj,
+        });
+    }
+});
+
+router.post('/complete', async (req, res) => {
+    const { order } = req.body;
+    const updatedOrder = await order.completeOrder(order);
     res.status(200);
-    res.json(body);
+    res.json(updatedOrder);
 });
 
 module.exports = router;

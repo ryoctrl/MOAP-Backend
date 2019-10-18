@@ -1,0 +1,19 @@
+module.exports = {
+    apps: [
+        {
+            name: 'MOAP-Backend',
+            script: 'npm',
+            args: 'start',
+            watch: ['controllers/', 'routes/', 'models/'],
+            env: {
+                MOSAIC: '4FB14A42CFXXXXXX',
+                STORE_ADDR: 'SAKWF5OVZNXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+                STORE_PUB_KEY: '2489C8AF3AXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+                STORE_PRIV_KEY: 'E530419D90XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+                GENERATION_HASH: '7B399454594XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+                NODE_HOST: 'https://nemp2p.mosin.jp',
+                NODE_HOST_SERVER: 'http://localhost:3000',
+            }
+        }
+    ]
+}

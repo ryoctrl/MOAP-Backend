@@ -99,6 +99,7 @@ const checkMenuStocks = async (itemId, requiredAmount) => {
     if(!_isNumber(itemId) || !_isNumber(requiredAmount)) {
         throw new TypeError('itemId or requiredAmount is not number type');
     }
+
     const item = await findOneById(itemId).catch(err => {
         console.error(err);
         return null;
