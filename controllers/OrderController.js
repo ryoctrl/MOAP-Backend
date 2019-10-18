@@ -4,6 +4,8 @@ const OrderItems = models.OrderItem;
 const Menu = models.Menu;
 const menu = require('./MenuController');
 const socket = require('./SocketController');
+const TimerQueueingOrder = require('../libs/queue-order').TimerQueueingOrder;
+const qo = new TimerQueueingOrder();
 
 const generateError = message => {
     return {
@@ -193,7 +195,7 @@ const updateOrderToPaid = async order => {
 
     const result = await Orders.update(params, query);
     const updatedOrder = await findOneById(order.id);
-    return updateOrder;
+    return updatedOrder;
 }
 
 const completeOrder = async order => {
@@ -215,10 +217,36 @@ const completeOrder = async order => {
     return updatedOrder;
 };
 
+const queueingOrder = async order => {
+    console.log('queueing order!!');
+    console.log(order);
+    if(!order.id) return;
+    const nextHandedAt = qo.nextTime();
+
+    console.log('next handed at is ');
+    console.log(nextHandedAt);
+
+    const query = {
+        where: {
+            id: order.id
+        }
+    };
+
+    const params = {
+        handed_at: nextHandedAt
+    };
+
+    const result = await Orders.update(params, query);
+    console.log(result);
+    const updatedOrder = await findOneById(order.id);
+    return updatedOrder;
+}
+
 module.exports = {
     registerNewCart,
     findAll,
     completeOrder,
     updateOrder,
     updateOrderToPaid,
+    queueingOrder
 };
