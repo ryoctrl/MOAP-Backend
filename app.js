@@ -4,6 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+const infoRouter = require('./routes/info');
 const menuesRouter = require('./routes/menues');
 const ordersRouter = require('./routes/orders');
 const usersRouter = require('./routes/users');
@@ -28,6 +29,7 @@ app.use(function(req, res, next) {
 app.use('/api/menues', menuesRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/user', usersRouter);
+app.use('/api/info', infoRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
