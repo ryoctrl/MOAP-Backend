@@ -218,13 +218,8 @@ const completeOrder = async order => {
 };
 
 const queueingOrder = async order => {
-    console.log('queueing order!!');
-    console.log(order);
     if(!order.id) return;
-    const nextHandedAt = qo.nextTime();
-
-    console.log('next handed at is ');
-    console.log(nextHandedAt);
+    const nextHandedAt = await qo.nextQueue();
 
     const query = {
         where: {
@@ -237,7 +232,6 @@ const queueingOrder = async order => {
     };
 
     const result = await Orders.update(params, query);
-    console.log(result);
     const updatedOrder = await findOneById(order.id);
     return updatedOrder;
 }

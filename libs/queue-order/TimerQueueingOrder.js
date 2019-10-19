@@ -40,7 +40,6 @@ class TimerQueueingOrder extends BaseQueueingOrder {
         while(true) {
             const query = { where: { handed_at: nextTime } };
             const nextQueues = await Order.findAll(query);
-            console.log(nextQueue);
             if(nextQueues.length < capacity) {
                 return nextTime;
             }

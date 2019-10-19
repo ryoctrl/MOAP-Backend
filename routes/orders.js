@@ -44,7 +44,6 @@ router.post('/payment', async(req, res) => {
         return;
     }
 
-    console.log('checking order!');
     const paymentResult = await nem.checkPaymentTransaction(hash, orderObj);
     if(!paymentResult) {
         return res.status.json({
@@ -53,12 +52,9 @@ router.post('/payment', async(req, res) => {
             order: orderObj
         });
     }
-    console.log('order checked!');
 
     let paidOrder = await order.updateOrderToPaid(orderObj)
     paidOrder = await order.queueingOrder(paidOrder);
-    console.log('updated order!');
-    console.log(paidOrder);
     socket.emitOrder('orders.paid', paidOrder);
 
     res.status(200).json(paidOrder);
