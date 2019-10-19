@@ -10,6 +10,15 @@ router.get('/', async (req, res) => {
     res.json(orders);
 });
 
+router.get('/history', async (req, res) => {
+    const { address } = req.query;
+    if(!address) {
+        return res.status(400).send();
+    }
+
+    res.json(await order.findAllByAddress(address));
+});
+
 router.post('/create', async (req, res) => {
     const body = req.body;
     const cart = body.cart;
@@ -44,8 +53,8 @@ router.post('/payment', async(req, res) => {
         return;
     }
 
-    const paymentResult = await nem.checkPaymentTransaction(hash, orderObj);
-    if(!paymentResult) {
+    const buyerAddress = await nem.checkPaymentTransaction(hash, orderObj);
+    if(!buyerAddress) {
         return res.status.json({
             err: true,
             message: `決済が確認できませんでした: ${hash}`,
@@ -53,7 +62,7 @@ router.post('/payment', async(req, res) => {
         });
     }
 
-    let paidOrder = await order.updateOrderToPaid(orderObj)
+    let paidOrder = await order.updateOrderToPaid(orderObj, buyerAddress);
     paidOrder = await order.queueingOrder(paidOrder);
     socket.emitOrder('orders.paid', paidOrder);
 

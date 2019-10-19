@@ -180,7 +180,26 @@ const findAll = async options => {
     return await Orders.findAll(query);
 };
 
-const updateOrderToPaid = async order => {
+const findAllByAddress = async address => {
+    if(!address) return [];
+    const query = {
+        where: {
+            buyer_address: address
+        },
+        include: [{
+            model: OrderItems,
+            required: false,
+            include: [{
+                model: Menu,
+                required: false,
+            }]
+        }]
+    };
+
+    return await Orders.findAll(query);
+};
+
+const updateOrderToPaid = async (order, buyerAddress)=> {
     if(!order.id) return;
 
     const query = {
@@ -191,6 +210,7 @@ const updateOrderToPaid = async order => {
 
     const params = {
         is_paid: true,
+        buyer_address: buyerAddress,
     };
 
     const result = await Orders.update(params, query);
@@ -239,6 +259,7 @@ const queueingOrder = async order => {
 module.exports = {
     registerNewCart,
     findAll,
+    findAllByAddress,
     completeOrder,
     updateOrder,
     updateOrderToPaid,

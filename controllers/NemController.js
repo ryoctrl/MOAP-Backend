@@ -59,11 +59,17 @@ const checkPaymentTransaction = async (hash, order) => {
     mosaic = mosaic[0];
     const message = transaction.message;
     if(message instanceof PlainMessage) return false;
-    const plainMessage = EncryptedMessage.decrypt(message, STORE_PRIV_KEY, transaction.signer, network);
+
+    const signer = transaction.signer;
+    const plainMessage = EncryptedMessage.decrypt(message, STORE_PRIV_KEY, signer, network);
     const orderDetail = JSON.parse(plainMessage.payload);
 
     const paidAmount = parseInt(mosaic.amount.toHex(), 16);
-    return orderDetail.orderId === order.id && order.total_price === paidAmount;
+
+    const isValidPayment = orderDetail.orderId === order.id && order.total_price === paidAmount;
+    if(!isValidPayment) return false;
+
+    return signer.address.address;
 };
 
 module.exports = {
