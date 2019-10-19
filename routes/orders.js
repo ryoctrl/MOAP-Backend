@@ -61,8 +61,8 @@ router.post('/payment', async(req, res) => {
 });
 
 router.post('/complete', async (req, res) => {
-    const { order } = req.body;
-    const updatedOrder = await order.completeOrder(order);
+    const { order: targetOrder } = req.body;
+    const updatedOrder = await order.completeOrder(targetOrder);
     res.status(200);
     res.json(updatedOrder);
 });
