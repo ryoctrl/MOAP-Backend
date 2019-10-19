@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const order = require('../controllers/OrderController');
 const nem = require('../controllers/NemController');
+const socket = require('../controllers/SocketController');
 
 router.get('/', async (req, res) => {
     const query = req.query;
@@ -44,16 +45,19 @@ router.post('/payment', async(req, res) => {
     }
 
     const paymentResult = await nem.checkPaymentTransaction(hash, orderObj);
-    if(paymentResult) {
-        const paidOrder = await order.paidOrder(orderObj);
-        res.status(200).json(paidOrder);
-    } else {
-        res.status(500).json({
+    if(!paymentResult) {
+        return res.status.json({
             err: true,
             message: `決済が確認できませんでした: ${hash}`,
-            orderObj,
+            order: orderObj
         });
     }
+
+    let paidOrder = await order.updateOrderToPaid(orderObj)
+    paidOrder = await order.queueingOrder(paidOrder);
+    socket.emitOrder('orders.paid', paidOrder);
+
+    res.status(200).json(paidOrder);
 });
 
 router.post('/complete', async (req, res) => {
