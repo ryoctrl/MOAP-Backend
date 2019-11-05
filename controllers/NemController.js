@@ -1,12 +1,18 @@
 const NEMSDK = require('nem2-sdk');
 const { 
+    Account,
     Address, 
+    Deadline,
+    Mosaic,
+    MosaicId,
+    UInt64,
     Listener, 
     TransactionHttp,
     PlainMessage,
     EncryptedMessage,
     PublicAccount,
-    NetworkType
+    NetworkType,
+    TransferTransaction
 } = NEMSDK;
 
 const HOST = process.env.NODE_HOST_SERVER;
@@ -14,6 +20,9 @@ const ADDRESS = process.env.STORE_ADDR;
 const STORE_PRIV_KEY = process.env.STORE_PRIV_KEY;
 const STORE_PUB_KEY = process.env.STORE_PUB_KEY;
 const MOSAIC_ID = process.env.MOSAIC;
+
+const MASTER_PRIV_KEY = process.env.MASTER_PRIV_KEY;
+const GENERATION_HASH = process.env.GENERATION_HASH;
 
 const network = NetworkType.MIJIN_TEST;
 const transactionService = new TransactionHttp(HOST);
@@ -72,6 +81,43 @@ const checkPaymentTransaction = async (hash, order) => {
     return signer.address.address;
 };
 
+const sendToken =  async (amount, message, address, publicKey) => {
+    const target = Address.createFromRawAddress(address);
+    console.log(target);
+    const transaction = TransferTransaction.create(
+        Deadline.create(),
+        target,
+        [
+            new Mosaic(
+                new MosaicId(MOSAIC_ID),
+                UInt64.fromUint(amount)
+            )
+        ],
+        EncryptedMessage.create(message, PublicAccount.createFromPublicKey(publicKey, NetworkType.MIJIN_TEST), MASTER_PRIV_KEY, NetworkType.MIJIN_TEST),
+        NetworkType.MIJIN_TEST
+    );
+
+    const sender = Account.createFromPrivateKey(MASTER_PRIV_KEY, NetworkType.MIJIN_TEST);
+    const signedTransaction = sender.sign(transaction, GENERATION_HASH);
+
+    const res = await new Promise((resolve, reject) => {
+        const succeeded = transactions => resolve(transactions);
+        const failured = err => reject(err);
+        transactionService.announce(signedTransaction).subscribe(succeeded, failured);
+    }).catch(err => ({isError: true, error: err}));
+
+    await new Promise(res => setTimeout(res, 2000));
+    await new Promise((resolve, reject) => {
+        console.log('checking transaction');
+        transactionService.getTransactionStatus(signedTransaction.hash).subscribe(success => resolve(console.log(success)), err => reject(console.error(err)));
+    });
+
+    console.log('returning result');
+    if(res.isError) return { error: res.error };
+    return { data: { res, hash: signedTransaction.hash}};
+};
+
 module.exports = {
-    checkPaymentTransaction
+    checkPaymentTransaction,
+    sendToken
 }
