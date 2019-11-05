@@ -1,3 +1,4 @@
+const sequelize = require('sequelize');
 const models = require('../models');
 const Orders = models.Order;
 const OrderItems = models.OrderItem;
@@ -6,6 +7,7 @@ const menu = require('./MenuController');
 const socket = require('./SocketController');
 const TimerQueueingOrder = require('../libs/queue-order').TimerQueueingOrder;
 const qo = new TimerQueueingOrder();
+const OP = sequelize.Op;
 
 const generateError = message => {
     return {
@@ -120,6 +122,24 @@ const updateOrder = async (id, cart) => {
     if(!Array.isArray(cart) || cart.length === 0)  return await _validateCartItems(cart);
     let order = await findOneById(id);
     if(!order) return generateError(`Order not found: ${id}`);
+
+    const itemIds = cart.map(item => item.id);
+    const deleteQuery = {
+        where: {
+            order_id: id,
+            menu_id: {
+                [OP.notIn]: itemIds
+            }
+        }
+    };
+
+    await OrderItems.findAll(deleteQuery)
+        .then(items => {
+            items.map(async item => {
+                await menu.cutStocks(item.menu_id, -1 * item.amount);
+            });
+        })
+        .then(() => OrderItems.destroy(deleteQuery));
 
     const upsertCart = (await Promise.all(cart.map(async item => {
         const { id: itemId, amount } = item;
