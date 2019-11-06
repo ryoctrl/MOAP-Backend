@@ -47,6 +47,8 @@ router.post('/update', async (req, res) => {
 
 router.post('/payment', async(req, res) => {
     const { order: orderObj, hash } = req.body;
+    console.log('calling payment API!');
+    console.log(`ID: ${orderObj.id}`);
 
     if(!hash){
         res.status(500).json({err: true, message: 'required parameter was not passed: hash'});

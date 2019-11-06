@@ -8,6 +8,7 @@ const socket = require('./SocketController');
 const TimerQueueingOrder = require('../libs/queue-order').TimerQueueingOrder;
 const qo = new TimerQueueingOrder();
 const OP = sequelize.Op;
+const uc = require('./UserController');
 
 const generateError = message => {
     return {
@@ -200,6 +201,18 @@ const findAll = async options => {
     return await Orders.findAll(query);
 };
 
+const findAllByUserId = async (uid, options) => {
+    if(!options.query) options.query = {};
+    const query = {
+        where: {
+            user_id: uid,
+            ...options.query
+        }
+    };
+
+    return await Orders.findAll(query);
+};
+
 const findAllByAddress = async address => {
     if(!address) return [];
     const query = {
@@ -222,6 +235,9 @@ const findAllByAddress = async address => {
 const updateOrderToPaid = async (order, buyerAddress)=> {
     if(!order.id) return;
 
+    const user = await uc.findOneByAddress(buyerAddress);
+    if(!user) return;
+
     const query = {
         where: {
             id: order.id
@@ -231,6 +247,7 @@ const updateOrderToPaid = async (order, buyerAddress)=> {
     const params = {
         is_paid: true,
         buyer_address: buyerAddress,
+        user_id: user.id,
     };
 
     const result = await Orders.update(params, query);
@@ -258,7 +275,7 @@ const completeOrder = async order => {
 };
 
 const queueingOrder = async order => {
-    if(!order.id) return;
+    if(!order || !order.id) return;
     const nextHandedAt = await qo.nextQueue();
 
     const query = {
@@ -283,5 +300,6 @@ module.exports = {
     completeOrder,
     updateOrder,
     updateOrderToPaid,
-    queueingOrder
+    queueingOrder,
+    findAllByUserId,
 };

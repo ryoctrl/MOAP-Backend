@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
         is_completed: DataTypes.BOOLEAN,
         handed_at: DataTypes.DATE,
         buyer_address: DataTypes.STRING,
+        user_id: DataTypes.INTEGER,
     }, {});
     Order.associate = function(models) {
         Order.hasMany(models.OrderItem, { foreignKey: 'order_id'});
