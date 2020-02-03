@@ -13,8 +13,10 @@ const {
     EncryptedMessage,
     PublicAccount,
     NetworkType,
-    TransferTransaction
+    TransferTransaction,
+    QueryParams,
 } = NEMSDK;
+const moment = require('moment');
 
 const HOST = process.env.NODE_HOST_SERVER;
 const ADDRESS = process.env.STORE_ADDR;
@@ -27,6 +29,7 @@ const GENERATION_HASH = process.env.GENERATION_HASH;
 
 const network = NetworkType.MIJIN_TEST;
 const transactionService = new TransactionHttp(HOST);
+console.log(STORE_PUB_KEY);
 const storePublicAccount = PublicAccount.createFromPublicKey(STORE_PUB_KEY, network);
 const address = Address.createFromRawAddress(ADDRESS);
 const listener = new Listener(HOST);
@@ -35,8 +38,10 @@ const waitingTransactions = {};
 const accountService = new AccountHttp(HOST);
 
 listener.open().then( () => {
+    console.log('listener opened!!');
     listener.confirmed(address).subscribe(transaction => {
         const transactionHash = transaction.transactionInfo.hash;
+        console.log('transaction confirmed!', transactionHash);
         const waiter = waitingTransactions[transactionHash];
         if(waiter) {
             waiter(transaction);
@@ -45,9 +50,14 @@ listener.open().then( () => {
 
         confirmedTransactions[transactionHash] = transaction;
     });
+}).catch(err => {
+    console.log(err.message);
+    console.log('Nemノードとの通信に失敗しました.');
+    process.exit(1);
 });
 
 const checkConfirmedTransaction = async hash => {
+    console.log('checking transaction!', hash);
     return await new Promise((resolve, reject) => {
         const confirmed = confirmedTransactions[hash];
         if(confirmed) {
@@ -86,6 +96,7 @@ const checkPaymentTransaction = async (hash, order) => {
 const sendToken =  async (amount, message, address, publicKey) => {
     const target = Address.createFromRawAddress(address);
     console.log(target);
+    const msg = publicKey ? EncryptedMessage.create(message, PublicAccount.createFromPublicKey(publicKey, NetworkType.MIJIN_TEST), MASTER_PRIV_KEY, NetworkType.MIJIN_TEST) : PlainMessage.create(message);
     const transaction = TransferTransaction.create(
         Deadline.create(),
         target,
@@ -95,7 +106,7 @@ const sendToken =  async (amount, message, address, publicKey) => {
                 UInt64.fromUint(amount)
             )
         ],
-        EncryptedMessage.create(message, PublicAccount.createFromPublicKey(publicKey, NetworkType.MIJIN_TEST), MASTER_PRIV_KEY, NetworkType.MIJIN_TEST),
+        msg,
         NetworkType.MIJIN_TEST
     );
 
@@ -111,7 +122,10 @@ const sendToken =  async (amount, message, address, publicKey) => {
     await new Promise(res => setTimeout(res, 2000));
     await new Promise((resolve, reject) => {
         console.log('checking transaction');
-        transactionService.getTransactionStatus(signedTransaction.hash).subscribe(success => resolve(console.log(success)), err => reject(console.error(err)));
+        transactionService.getTransactionStatus(signedTransaction.hash).subscribe(success => resolve(success), err => reject(err));
+    }).catch(err => {
+        console.log('nem send token error!!');
+        console.log(err);
     });
 
     console.log('returning result');
@@ -139,8 +153,35 @@ const getAmountByAddress = async address => {
     });
 };
 
+const getTransactions = async () => {
+    return await new Promise((resolve, reject) => {
+        accountService.transactions(address, new QueryParams(100))
+            .subscribe(result => resolve(result), err => reject(err));
+    });
+};
+
+const getPerformances = async () => {
+    const transactions = await getTransactions();
+    return transactions.map(({ deadline, signer, message }) => ({ deadline, signer, message}))
+        .filter(({ message })=> message instanceof EncryptedMessage)
+        .map(({ deadline, signer, message })=> {
+            const plainMessage = EncryptedMessage.decrypt(message, STORE_PRIV_KEY, signer, network);
+            const orderDetail = JSON.parse(plainMessage.payload);
+            const deadlineTS = Number(deadline.toString());
+            const nemesisTS = Deadline.timestampNemesisBlock * 1000;
+            const ts = deadlineTS + nemesisTS;
+            const mom = moment(ts).add(-2, 'hours');
+            orderDetail.paymentDate = mom.format('YYYY-MM-DD HH:mm:ss');
+            orderDetail.paymentDate = mom.hours() === 12 && mom.minutes() <= 55 ? orderDetail.paymentDate : false;
+            return orderDetail;
+        })
+        .filter(detail => detail.paymentDate);
+};
+
 module.exports = {
     checkPaymentTransaction,
     sendToken,
     getAmountByAddress,
+    getTransactions,
+    getPerformances,
 }

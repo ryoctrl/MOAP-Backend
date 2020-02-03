@@ -183,10 +183,13 @@ const updateOrder = async (id, cart) => {
 
 const findAll = async options => {
     let isCompleted = !!options;
+    let isPaid = !!options;
     if(options) isCompleted = !(options.is_completed === 'false');
+    if(options) isPaid = options.is_paid === 'true';
     const query = {
         where: {
-            is_completed: isCompleted
+            is_completed: isCompleted,
+            is_paid: isPaid,
         },
         include: [{
             model: OrderItems,

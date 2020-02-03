@@ -3,9 +3,11 @@ const router = express.Router();
 const order = require('../controllers/OrderController');
 const nem = require('../controllers/NemController');
 const socket = require('../controllers/SocketController');
+const service = require('../libs/service');
 
 router.get('/', async (req, res) => {
     const query = req.query;
+    console.log(query);
     const orders = await order.findAll(query);
     res.json(orders);
 });
@@ -20,9 +22,12 @@ router.get('/history', async (req, res) => {
 });
 
 router.post('/create', async (req, res) => {
+    const inService = service.inService();
+    if(!inService.inservice) return res.status(500).json(inService);
     const body = req.body;
     const cart = body.cart;
     const newOrder = await order.registerNewCart(cart);
+    console.log(newOrder);
     if(newOrder.error) {
         res.status(500);
     } else {

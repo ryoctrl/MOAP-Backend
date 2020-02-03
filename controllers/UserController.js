@@ -1,5 +1,9 @@
 const TestUser = require('../models').TestUser;
 
+const findAll = async () => {
+    return await TestUser.findAll();
+}
+
 const findOneByNumber = async number => {
     const query = {
         where: {
@@ -69,4 +73,5 @@ module.exports = {
     activateUser,
     findOneByNumber,
     findOneByAddress,
+    findAll,
 }
