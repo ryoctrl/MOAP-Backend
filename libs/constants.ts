@@ -1,0 +1,8 @@
+export const PAYMENT_SERVICES = {
+  NEM: 'NEM',
+  LOCAL: 'LOCAL',
+} as const;
+
+export type PAYMENT_SERVICE = typeof PAYMENT_SERVICES[keyof typeof PAYMENT_SERVICES];
+
+export const DEFAULT_PAYMENT_SERVICE: PAYMENT_SERVICE = PAYMENT_SERVICES.LOCAL;

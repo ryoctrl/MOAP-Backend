@@ -29,7 +29,6 @@ const GENERATION_HASH = process.env.GENERATION_HASH;
 
 const network = NetworkType.MIJIN_TEST;
 const transactionService = new TransactionHttp(HOST);
-console.log(STORE_PUB_KEY);
 const storePublicAccount = PublicAccount.createFromPublicKey(
   STORE_PUB_KEY,
   network,
@@ -40,7 +39,10 @@ const confirmedTransactions = {};
 const waitingTransactions = {};
 const accountService = new AccountHttp(HOST);
 
+let nemConnected = false;
+
 const beginListen = () => {
+  nemCOnnected = true;
   console.log(
     'Begin subscribe confirmed transaction. Address:',
     address.address,
@@ -64,9 +66,10 @@ listener
   .open()
   .then(beginListen)
   .catch((err) => {
+    nemConnected = false;
     console.log(err.message);
     console.log('Nemノードとの通信に失敗しました.');
-    process.exit(1);
+    // process.exit(1);
   });
 
 const checkConfirmedTransaction = async (hash) => {
@@ -190,6 +193,7 @@ const getAmountByAddress = async (address) => {
 };
 
 const getTransactions = async () => {
+  if (nemConnected) return {};
   return await new Promise((resolve, reject) => {
     accountService.transactions(address, new QueryParams(100)).subscribe(
       (result) => resolve(result),
@@ -199,6 +203,7 @@ const getTransactions = async () => {
 };
 
 const getPerformances = async () => {
+  if (nemConnected) return {};
   const transactions = await getTransactions();
   return transactions
     .map(({ deadline, signer, message }) => ({ deadline, signer, message }))
